@@ -1,0 +1,8 @@
+[chat]
+topic = "transaction"
+
+[ping]
+interval_seconds = 20  # Ping every 20 seconds
+
+[ui]
+separator = "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"

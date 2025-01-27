@@ -1,0 +1,25 @@
+[package]
+name = "ipfs-private-example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.38", features = ["rt-multi-thread", "macros", "io-std"] }
+either = "1.12"
+futures = "0.3"
+libp2p = { version = "0.53", features = [ "tokio", "gossipsub", "dns", "identify", "kad", "macros", "noise", "ping", "pnet", "tcp", "websocket", "yamux"]}
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+serde = { version = "1.0.192", features = ["derive"] }
+config = "0.13"
+chrono = "0.4"
+
+[lints]
+rust.unreachable_pub = "warn"
+clippy.used_underscore_binding = "warn"
+clippy.pedantic = { level = "allow", priority = -1 }
+clippy.type_complexity = "allow"
+clippy.unnecessary_wraps = "warn"
+clippy.manual_let_else = "warn"
+clippy.dbg_macro = "warn"
