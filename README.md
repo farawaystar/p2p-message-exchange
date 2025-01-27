@@ -1,27 +1,19 @@
-**Simple P2P Network for Message Exchange**
+**Simple P2P Network for Message Exchange using rust-libp2p**
 
-Hi! this project is a mini version of a private, decentralized chat network using libp2p (the same tech behind IPFS). It’s like a mix between a secure group chat and a network diagnostics tool. Here’s the vibe:
+This is an implementation of a private, decentralized chat network using libp2p (the same tech behind IPFS). The project has elements of a secure group chat, or a blockchain transaction exchanger or simply a network diagnostics tool! Here’s the vibe:
 
 ### **What It Does**
-- **Chat with Peers**: Type messages in a terminal, and it get's broadcasted to all peers in the network.
-- 🔒 **Private Networks**: (in-progress) Use a `swarm.key` file (like a secret password) to lock down who can join.
-- 📡 **Auto-Discovery**: (in-progress) Nodes find each other using IPFS-style addresses (`/ip4/.../tcp/...`).
-- **Network Health Checks**: pings to see if peers are online and measures connection speeds.
+- **Chat with peers**: Type messages in a terminal, and it get's broadcasted to all peers in the network.
+- **Identify sender/receiver**: tracks the peer_id of the sender and receiver, as well which node has "dialled" into which node.
+- **Monitor network**: pings to see if peers are online and measures connection speeds.
+- 🔒 **Private networks**: (in-progress) Use a `swarm.key` file (like a secret password) to lock down who can join.
+- 📡 **Auto-discovery**: (in-progress) Nodes find each other using IPFS-style addresses (`/ip4/.../tcp/...`).
+
 - **Configurable Params**: Key settings such as subscriber topic, ping frequeny, some cli formatting are configurable via `config.toml`. So no recompiling needed!
 
 ### **What’s “IPFS” About It?**
 - It borrows **IPFS’s private network setup** (the `swarm.key` file and `IPFS_PATH` detection).
 - Uses IPFS-compatible addresses for peers (though it’s *not actually IPFS*—no file sharing/storage implemented, yet..).
-
-### **Cool Features**
-- **Config-Driven**: Change the chat topic or ping frequency by editing `config.toml`—no recompiling needed!
-- **Plug-and-Play**: Run `cargo run` to start a node, or `cargo run <PEER_ADDRESS>` to connect to others.
-- **Retro Terminal Vibes**: Messages show up with timestamps, peer IDs, and custom separators. Feels hacker-y.
-
-### **Why It’s Cool for Tinkering**
-- Learn how libp2p works under the hood.
-- See how private networks like IPFS swarms are secured.
-- Easy to hack on—add new protocols or tweak the UI formatting.
 
 ---
 
@@ -30,28 +22,34 @@ Hi! this project is a mini version of a private, decentralized chat network usin
 
 ### Build & Run
 ```bash
-# Clone repository
+# Clone repo
 git clone https://github.com/farawaystar/p2p-message-exchange.git
 cd p2p-message-exchange
  ```
 
 ```bash
-cargo build --release
+# Build repo
+cargo build
 ```
 
 2. **Run Nodes**  
    - First node: `cargo run`  
    - Second node: `cargo run /ip4/127.0.0.1/tcp/<PORT_FROM_FIRST_NODE>`
    - Open as many nodes as you want, one terminal per node.
+
 3. **Chat Away**  
    Type messages in any terminal. They’ll show up in all!
+
 4. **Shut down nodes**
-   - Press ctrl+c 
+   - Press ctrl+c
+
 5. **handle node dependency**
    - Just make sure to handle which node is listening to which. If say node 3 is listening to node 2, then if node 2 shuts down, then node 3 goes out of order.
    - If all the nodes are listening to the genesis node, then any interruption in other nodes, will not affect any other node. But if genesis node shuts down, no other node will work. 
 
-### Example Output
+---
+
+### Example output
 ```text
 Got Message [14:32:45.782] 📬
 Peer: 12D3KooWRSEux5mRkpUbpLv6E21RjAm9wzW3aVxLKJ17FND6ZQhX
@@ -60,7 +58,7 @@ ID: 1220a8a4c
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 ```
 
-### Example Node Startup log
+### Example Node startup log
 ```text
 Using chat topic: transaction
 Subscribing to Topic { topic: "transaction", phantom_data: PhantomData<libp2p_gossipsub::topic::IdentityHash> }
@@ -79,8 +77,6 @@ ping: rtt to 12D3KooWDvKVDrrQ... is 0 ms
 For a **private network**, just add a `swarm.key` to `~/.ipfs/` and restart the nodes. Boom—locked down.
 
 ---
-
-Think of it like a mashup of a 90s IRC chat and modern P2P tech. Great for experimenting with decentralized networks! 🚀
 
 ## License
 
