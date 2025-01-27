@@ -1,6 +1,6 @@
 **Simple P2P Network for Message Exchange using rust-libp2p**
 
-This is an implementation of a private, decentralized chat network using libp2p (the same tech behind IPFS). The project has elements of a secure group chat, or a blockchain transaction exchanger or simply a network diagnostics tool! Here’s the vibe:
+This is an implementation of a private, decentralized topic subscriber/chat network using libp2p (the same tech behind IPFS). Use this to spin multiple nodes, and make the nodes subscribe to a chosen topic, and listen & exchange info between them. The project has elements of a secure group chat, or a blockchain transaction exchanger or simply a network diagnostics tool! Here’s the vibe:
 
 ### **What It Does**
 - **Chat with peers**: Type messages in a terminal, and it get's broadcasted to all peers in the network.
