@@ -1,4 +1,4 @@
-**Simple P2P Network for Message Exchange using rust-libp2p**
+# Simple P2P Network for Message Exchange using rust-libp2p
 
 This is an implementation of a private, decentralized topic subscriber/chat network using libp2p (the same tech behind IPFS). Use this to spin multiple nodes, and make the nodes subscribe to a chosen topic, and listen & exchange info between them. The project has elements of a secure group chat, or a blockchain transaction exchanger or simply a network diagnostics tool! Here’s the vibe:
 
@@ -17,24 +17,28 @@ This is an implementation of a private, decentralized topic subscriber/chat netw
 
 ---
 
-### **Quick Start**
+# Quick Start
 1. **Clone & Build**  
 
-### Build & Run - simple text input
+**Clone**
+
 ```bash
 # Clone repo
 git clone https://github.com/farawaystar/p2p-message-exchange.git
 cd p2p-message-exchange
  ```
 
+**Build**
 ```bash
 # Build repo
 cargo build
 ```
+---
+# Run - exchange simple text messages
 
 2. **Run Nodes**  
-   - First node: `cargo run`  
-   - Second node: `cargo run /ip4/127.0.0.1/tcp/<PORT_FROM_FIRST_NODE>`
+   - Spin-up first node: `cargo run`  
+   - Spin-up second node: `cargo run /ip4/127.0.0.1/tcp/<PORT_FROM_FIRST_NODE>`
    - Open as many nodes as you want, one terminal per node.
 
 3. **Chat Away**  
@@ -46,8 +50,6 @@ cargo build
 5. **handle node dependency**
    - Just make sure to handle which node is listening to which. If say node 3 is listening to node 2, then if node 2 shuts down, then node 3 goes out of order.
    - If all the nodes are listening to the genesis node, then any interruption in other nodes, will not affect any other node. But if genesis node shuts down, no other node will work. 
-
----
 
 ### Example output
 ```text
@@ -78,7 +80,7 @@ For a **private network**, just add a `swarm.key` to `~/.ipfs/` and restart the 
 
 ---
 
-### Build & Run - dummy u64 transaction
+# Run - dummy u64 transaction
 
 The file generate_tx.rs generates a random 64-byte array ([u8; 64]) using rand::thread_rng(). It then converts this to a hex string prefixed with /tx (e.g., /tx a1b2c3...). You can copy the output of this and feed it into the CLI of the main program as the dummy transaction.
 
@@ -93,7 +95,7 @@ cargo run --bin generate_tx
 ```
 
 ### Example output when passing this to any node
-supply the above output to any node
+supply the above output to any running node
 
 ```text
 Got Transaction [02:09:58.277] 📬
@@ -108,7 +110,7 @@ to-do
 
 ---
 
-### Port assignment and re-usability
+# Port assignment and re-usability
 The port assignment happens in this line:
 ```text
 swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
@@ -128,7 +130,8 @@ swarm.listen_on("/ip4/0.0.0.0/tcp/12345".parse()?)?;
 Use Ctrl+C to terminate a port. It gets immediately terminated without any TIME_WAIT issues and can be re-used immediately. In case port hardcoing, wait for ~60
 
 To see if a port has been released
-# Linux/macOS
+
+### Linux/macOS
 ```bash
 lsof -i :<PORT>
 ```
