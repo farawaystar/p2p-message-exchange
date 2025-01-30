@@ -1,25 +1,5 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-// DEALINGS IN THE SOFTWARE.
-
 #![doc = include_str!("../README.md")]
-use std::{env, error::Error, fs, path::Path, str::FromStr};
+use std::{env, error::Error, fs, path::Path, str::FromStr, collections::HashMap};
 
 use either::Either;
 use futures::prelude::*;
@@ -30,13 +10,23 @@ use libp2p::{
     noise, ping,
     pnet::{PnetConfig, PreSharedKey},
     swarm::{NetworkBehaviour, SwarmEvent},
-    tcp, yamux, Multiaddr, Transport,
+    tcp, yamux, Multiaddr, Transport, PeerId,
 };
+
+// use bincode::{encode_to_vec, decode_from_slice};
+use bincode::{
+    serde::{encode_to_vec, decode_from_slice},
+    config::standard
+};
+// use bincode::config::standard;
+use hex;
+
 use tokio::{io, io::AsyncBufReadExt, select};
 use tracing_subscriber::EnvFilter;
 
+// use serde::Deserialize;
 use serde::Deserialize;
-use config::Config;
+// use config::Config;
 
 #[derive(Debug, Deserialize)]
 struct Settings {
@@ -60,6 +50,13 @@ struct UiSettings {
     separator: String,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct TransactionMessage {
+    #[serde(with = "serde_bytes")]
+    peer_id: Vec<u8>,
+    #[serde(with = "serde_bytes")]
+    tx: [u8; 64],
+}
 /// Get the current ipfs repo path, either from the IPFS_PATH environment variable or
 /// from the default $HOME/.ipfs
 fn get_ipfs_path() -> Box<Path> {
@@ -189,6 +186,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             })
         })?
         .build();
+    let mut peer_transactions: HashMap<PeerId, Vec<[u8; 64]>> = HashMap::new();
 
     println!("Subscribing to {gossipsub_topic:?}");
     swarm
@@ -214,14 +212,58 @@ async fn main() -> Result<(), Box<dyn Error>> {
     loop {
         select! {
             Ok(Some(line)) = stdin.next_line() => {
+                if line.starts_with("/list") {
+                    //... existing list handling ...
+                    println!("Peer Transactions:");
+                    for (peer, txs) in &peer_transactions {
+                        println!("Peer {}: {} transactions", peer.to_base58(), txs.len());
+                        for tx in txs {
+                            println!("  Tx: {}", hex::encode(tx));
+                        }
+                        println!("{}", settings.ui.separator);
+                    }
+                }
+                else if line.starts_with("/tx ") {
+                    // Handle transaction input
+                    let hex_str = line.trim_start_matches("/tx ").trim();
+                    let tx_bytes = match hex::decode(hex_str) {
+                    Ok(bytes) => bytes,
+                    Err(e) => {
+                        println!("Invalid hex: {}", e);
+                        continue;
+                        }
+                    };
+                if tx_bytes.len() != 64 {
+                        println!("Transaction must be 64 bytes (128 hex chars)");
+                        continue;
+                    }
+                let mut tx = [0u8; 64];
+                tx.copy_from_slice(&tx_bytes);
+
+                    let msg = TransactionMessage {
+                    peer_id: swarm.local_peer_id().to_bytes(),
+                    tx,
+                    };
+                let serialized = encode_to_vec(&msg, standard()).unwrap();
                 if let Err(e) = swarm
                     .behaviour_mut()
                     .gossipsub
-                    .publish(gossipsub_topic.clone(), line.as_bytes())
-                {
-                    println!("Publish error: {e:?}");
+                    .publish(gossipsub_topic.clone(), serialized)
+                    {
+                        println!("Publish error: {e:?}");
+                    }
                 }
-            },
+                else {
+                    if let Err(e) = swarm
+                        .behaviour_mut()
+                        .gossipsub
+                        .publish(gossipsub_topic.clone(), line.as_bytes())
+                        {
+                        println!("Publish error: {e:?}");
+                        }
+                    }
+                },          
+
             event = swarm.select_next_some() => {
                 match event {
                     SwarmEvent::NewListenAddr { address, .. } => {
@@ -235,14 +277,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         message_id: id,
                         message,
                     })) => {
-                        println!(
-                            "Got Message [{}] 📬\nPeer: {}\nMessage: {}\nID: {}\n{}\n",
-                            chrono::Local::now().format("%H:%M:%S%.3f"),
-                            peer_id.to_base58(),
-                            String::from_utf8_lossy(&message.data).trim(),
-                            id,
-                            settings.ui.separator
-                        );                        
+                        match decode_from_slice::<TransactionMessage, _>(&message.data, standard()) {
+                            Ok((msg, _)) => {
+                                match PeerId::from_bytes(&msg.peer_id) {
+                                    Ok(sender_id) => {
+                                        peer_transactions.entry(sender_id).or_default().push(msg.tx);
+                                        println!(
+                                            "Got Transaction [{}] 📬\nPeer: {}\nTx: {}\nID: {}\n{}\n",
+                                            chrono::Local::now().format("%H:%M:%S%.3f"),
+                                            sender_id.to_base58(),
+                                            hex::encode(msg.tx),
+                                            id,
+                                            settings.ui.separator
+                                        );
+                                    }
+                                    Err(e) => println!("Invalid peer ID in transaction: {}", e),
+                                }
+                            }
+                            Err(_) => {                      
+                            println!(
+                                "Got Message [{}] 📬\nPeer: {}\nMessage: {}\nID: {}\n{}\n",
+                                chrono::Local::now().format("%H:%M:%S%.3f"),
+                                peer_id.to_base58(),
+                                String::from_utf8_lossy(&message.data).trim(),
+                                id,
+                                settings.ui.separator
+                                );                        
+                            }
+                        }
                     }
                     SwarmEvent::Behaviour(MyBehaviourEvent::Ping(event)) => {
                         match event {
