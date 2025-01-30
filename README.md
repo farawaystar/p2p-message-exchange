@@ -20,7 +20,7 @@ This is an implementation of a private, decentralized topic subscriber/chat netw
 ### **Quick Start**
 1. **Clone & Build**  
 
-### Build & Run
+### Build & Run - simple text input
 ```bash
 # Clone repo
 git clone https://github.com/farawaystar/p2p-message-exchange.git
@@ -76,6 +76,62 @@ ping: rtt to 12D3KooWDvKVDrrQ... is 0 ms
 
 For a **private network**, just add a `swarm.key` to `~/.ipfs/` and restart the nodes. Boom—locked down.
 
+---
+
+### Build & Run - dummy u64 transaction
+
+The file generate_tx.rs generates a random 64-byte array ([u8; 64]) using rand::thread_rng(). It then converts this to a hex string prefixed with /tx (e.g., /tx a1b2c3...). You can copy the output of this and feed it into the CLI of the main program as the dummy transaction.
+
+```bash
+# Generate a transaction command. Example output: /tx a1b2c3... (128 hex characters)
+cargo run --bin generate_tx
+```
+
+### Example output
+```text
+/tx 26db918eb325b552703a2a217d64a15544bab409fb5ad5f7ce87c7dd05c6cef26f6f12be40473e2f5cee51c34723177df52ccc06b38c9a9daad31f070079828f
+```
+
+### Example output when passing this to any node
+supply the above output to any node
+
+```text
+Got Transaction [02:09:58.277] 📬
+Peer: 12D3KooWBLYGQeiFS2KbEjfAPZz8GMErdyMcpLvMhbjB2GhnaHAg
+Tx: 71e8c2e80b26bcf9d67613d69aa9b1769a2057a8a254f6e5110266bdb717920ef801ebe11e2d1539bb1fd1cf83ddab2a68c8c992e25a2c5490b5e13ac1204fa8
+ID: 313244334b6f6f57424c59475165694653324b62456a6641505a7a38474d457264794d63704c764d68626a423247686e6148416731373338313939333433393936353437303032
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+```
+
+### Pipe directly into a particular node (to-do)
+to-do
+
+---
+
+### Port assignment and re-usability
+The port assignment happens in this line:
+```text
+swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
+```
+The OS dynamically assigns a free port because of the 0 in tcp/0 which means "let the OS assign a random available port". This uses ephemeral ports (typically in the range 32768-60999 on Linux/macOS).
+
+You can see the actual port used in the log output:
+```text
+Listening on /ip4/0.0.0.0/tcp/51123  <-- Example assigned port
+```
+
+If you want to hardcode a port, say 12345, use the following, although there isnt a use doing this since we need multiple nodes to exchange info:
+```text
+swarm.listen_on("/ip4/0.0.0.0/tcp/12345".parse()?)?;
+```
+
+Use Ctrl+C to terminate a port. It gets immediately terminated without any TIME_WAIT issues and can be re-used immediately. In case port hardcoing, wait for ~60
+
+To see if a port has been released
+# Linux/macOS
+```bash
+lsof -i :<PORT>
+```
 ---
 
 ## License
