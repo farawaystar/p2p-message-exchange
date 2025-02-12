@@ -9,7 +9,7 @@ jobs:
   extract-deps:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -19,7 +19,7 @@ jobs:
         run: |
           cargo metadata --format-version=1 > dependencies.json
       - name: Upload dependency info
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: dependencies
           path: dependencies.json
