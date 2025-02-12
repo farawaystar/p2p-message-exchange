@@ -129,9 +129,8 @@ swarm.listen_on("/ip4/0.0.0.0/tcp/12345".parse()?)?;
 
 Use Ctrl+C to terminate a port. It gets immediately terminated without any TIME_WAIT issues and can be re-used immediately. In case port hardcoing, wait for ~60
 
-To see if a port has been released
+To see if a port has been released (Linux/macOS):
 
-### Linux/macOS
 ```bash
 lsof -i :<PORT>
 ```
